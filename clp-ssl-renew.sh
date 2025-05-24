@@ -2,12 +2,11 @@
 
 set -euo pipefail
 
-# === Konfiguration ===
 CERT_DST_BASE="/etc/nginx/ssl-certificates"
 CERT_SRC_BASE="/etc/letsencrypt/live"
 LOGFILE="/var/log/cloudpanel-certificate-auto.log"
 WARN_DAYS=14
-CERTBOT_EMAIL="deine-email@domain.de"   # <--- anpassen!
+CERTBOT_EMAIL="deine-mail@domain.de"
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $1" | tee -a "$LOGFILE"
@@ -15,19 +14,15 @@ log() {
 
 log "===== Start Zertifikatsprüfung ====="
 
-# jq prüfen
-if ! command -v jq &>/dev/null; then
-    log "❌ 'jq' ist nicht installiert. Bitte mit 'apt install jq' nachinstallieren."
-    exit 1
-fi
-
-# === Webroots ermitteln ===
+# === Webroots aus /home/ rekonstruieren ===
 declare -A DOMAIN_WEBROOTS
-while IFS=":" read -r domain user; do
-    domain=$(echo "$domain" | xargs)
-    user=$(echo "$user" | xargs)
-    DOMAIN_WEBROOTS["$domain"]="/home/$user/htdocs/$domain"
-done < <(clpctl site:list --output=json | jq -r '.[] | "\(.domainName):\(.systemUser)"')
+
+for dir in /home/*/htdocs/*; do
+    if [[ -d "$dir" ]]; then
+        domain=$(basename "$dir")
+        DOMAIN_WEBROOTS["$domain"]="$dir"
+    fi
+done
 
 # === Zertifikate prüfen ===
 shopt -s nullglob
@@ -35,20 +30,17 @@ for key_path in "$CERT_DST_BASE"/*.key; do
     domain=$(basename "$key_path" .key)
     crt_path="$CERT_DST_BASE/$domain.crt"
 
-    # Webroot prüfen
     webroot="${DOMAIN_WEBROOTS[$domain]:-}"
     if [[ -z "$webroot" || ! -d "$webroot" ]]; then
         log "❌ Webroot für $domain nicht gefunden – überspringe."
         continue
     fi
 
-    # Zertifikat vorhanden?
     if [[ ! -f "$crt_path" ]]; then
         log "❌ Kein .crt für $domain – überspringe."
         continue
     fi
 
-    # Ablaufdatum prüfen
     renew=false
     enddate=$(openssl x509 -enddate -noout -in "$crt_path" 2>/dev/null | cut -d= -f2 || true)
     if [[ -z "$enddate" ]]; then
@@ -66,7 +58,6 @@ for key_path in "$CERT_DST_BASE"/*.key; do
         fi
     fi
 
-    # === Zertifikat erneuern ===
     if [[ "$renew" == true ]]; then
         if certbot certonly --webroot -w "$webroot" \
             --agree-tos --non-interactive --email "$CERTBOT_EMAIL" \
@@ -87,7 +78,6 @@ for key_path in "$CERT_DST_BASE"/*.key; do
         fi
     fi
 
-    # === Zertifikat importieren ===
     if openssl x509 -in "$crt_path" -noout &>/dev/null; then
         if clpctl site:install:certificate \
             --domainName="$domain" \
