@@ -17,7 +17,6 @@ Ein automatisiertes Shell-Skript, das deine Let's Encrypt-Zertifikate erneuert, 
 - 📂 Kopiert `fullchain.pem` und `privkey.pem` ins Zielverzeichnis
 - 📥 Importiert mit `clpctl site:install:certificate`
 - 📜 Loggt alle Schritte unter `/var/log/cloudpanel-certificate-auto.log`
-- 🚫 Ignoriert `custom-domain` automatisch
 - ✅ Kompatibel mit Pfadstruktur wie `/home/<benutzer>/htdocs/<domain>`
 
 ---
@@ -26,6 +25,7 @@ Ein automatisiertes Shell-Skript, das deine Let's Encrypt-Zertifikate erneuert, 
 
 - CloudPanel (getestet ab Version 2.x)
 - Certbot installiert (`sudo apt install certbot`)
+- jq installiert (`sudo apt install jq`)
 - Root-Zugriff
 - Domains unter `/home/<benutzer>/htdocs/<domain>`
 - Zertifikate unter `/etc/nginx/ssl-certificates`
@@ -149,5 +149,5 @@ MIT License – du darfst das Skript frei verwenden, anpassen und weitergeben.
 
 ## 👨‍💻 Autor
 
-Erstellt von [qttx-dev] [https://github.com/dein-benutzer]  
+Erstellt von [qttx-dev] [https://github.com/qttx-dev]  
 Pull Requests, Issues und ⭐ sind willkommen!
