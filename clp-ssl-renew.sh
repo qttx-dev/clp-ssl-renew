@@ -9,7 +9,6 @@ WARN_DAYS=14
 CERTBOT_EMAIL="deine-mail@domain.de"
 
 # Wichtig: Hier deine CloudPanel-Admin-Domain eintragen.
-# Beispiel: PANEL_DOMAIN="panel.sheiner.de"
 PANEL_DOMAIN="panel.deinedomain.de"
 
 # Wenn true, wird bei der CloudPanel-Oberfläche certbot standalone genutzt.
